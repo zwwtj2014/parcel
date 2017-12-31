@@ -40,6 +40,8 @@ require = (function (modules, cache, entry) {
 
       localRequire.resolve = resolve;
 
+      // Expose the exports if we are on the entry point by using the
+      // previous defined module.
       var module = cache[name] = previousModule && name === 1
         ? previousModule
         : new newRequire.Module;
