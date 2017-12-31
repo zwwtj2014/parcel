@@ -11,6 +11,9 @@ require = (function (modules, cache, entry) {
   // Save the require from previous bundle to this closure if any
   var previousRequire = typeof require === "function" && require;
 
+  // Save the module from previous module or Node.js if any
+  var previousModule = typeof module === 'object' && module;
+
   function newRequire(name, jumped) {
     if (!cache[name]) {
       if (!modules[name]) {
@@ -34,10 +37,12 @@ require = (function (modules, cache, entry) {
         err.code = 'MODULE_NOT_FOUND';
         throw err;
       }
-      
+
       localRequire.resolve = resolve;
 
-      var module = cache[name] = new newRequire.Module;
+      var module = cache[name] = previousModule && name === 1
+        ? previousModule
+        : new newRequire.Module;
 
       modules[name][0].call(module.exports, localRequire, module, module.exports);
     }
