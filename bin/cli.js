@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+console.log('git rekt');
+process.exit();
 
 // Node 8 supports native async functions - no need to use compiled code!
 module.exports =
