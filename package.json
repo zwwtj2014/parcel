@@ -42,7 +42,6 @@
     "serve-static": "^1.12.4",
     "uglify-es": "^3.2.1",
     "v8-compile-cache": "^1.1.0",
-    "vue-component-compiler": "https://github.com/shawwn/vue-component-compiler#parcel-vue-component-compiler",
     "worker-farm": "^1.4.1",
     "ws": "^3.3.3"
   },
@@ -73,6 +72,8 @@
     "stylus": "^0.54.5",
     "typescript": "^2.6.2",
     "vue": "^2.5.13",
+    "vue-component-compiler":
+      "https://github.com/shawwn/vue-component-compiler#parcel-vue-component-compiler",
     "vue-router": "^3.0.1",
     "vue-template-compiler": "^2.5.13",
     "vuex": "^3.0.1",
@@ -86,10 +87,12 @@
     "format": "prettier --write './{src,bin,test}/**/*.{js,json,md}'",
     "build": "yarn minify && babel src -d lib && ncp src/builtins lib/builtins",
     "prepublish": "yarn build",
-    "minify": "uglifyjs -c -m -o src/builtins/prelude.min.js src/builtins/prelude.js",
+    "minify":
+      "uglifyjs -c -m -o src/builtins/prelude.min.js src/builtins/prelude.js",
     "precommit": "npm run lint && lint-staged",
     "lint": "eslint .",
-    "postinstall": "node -e \"console.log('\\u001b[35m\\u001b[1mLove Parcel? You can now donate to our open collective:\\u001b[22m\\u001b[39m\\n > \\u001b[34mhttps://opencollective.com/parcel/donate\\u001b[0m')\""
+    "postinstall":
+      "node -e \"console.log('\\u001b[35m\\u001b[1mLove Parcel? You can now donate to our open collective:\\u001b[22m\\u001b[39m\\n > \\u001b[34mhttps://opencollective.com/parcel/donate\\u001b[0m')\""
   },
   "bin": {
     "parcel": "bin/cli.js"
@@ -98,10 +101,7 @@
     "node": ">= 6.0.0"
   },
   "lint-staged": {
-    "*.{js,json,md}": [
-      "prettier --write",
-      "git add"
-    ]
+    "*.{js,json,md}": ["prettier --write", "git add"]
   },
   "collective": {
     "type": "opencollective",
