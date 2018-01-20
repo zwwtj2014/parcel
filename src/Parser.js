@@ -22,10 +22,12 @@ class Parser {
     this.registerExtension('yml', './assets/YAMLAsset');
     this.registerExtension('gql', './assets/GraphqlAsset');
     this.registerExtension('graphql', './assets/GraphqlAsset');
+    this.registerExtension('vue', './assets/VueAsset');
 
     this.registerExtension('css', './assets/CSSAsset');
     this.registerExtension('pcss', './assets/CSSAsset');
     this.registerExtension('styl', './assets/StylusAsset');
+    this.registerExtension('stylus', './assets/StylusAsset');
     this.registerExtension('less', './assets/LESSAsset');
     this.registerExtension('sass', './assets/SASSAsset');
     this.registerExtension('scss', './assets/SASSAsset');
@@ -60,7 +62,10 @@ class Parser {
     return parser;
   }
 
-  getAsset(filename, pkg, options = {}) {
+  getAsset(filename, pkg, options = {}, contents = null) {
+    if (contents != null) {
+      options = Object.assign({}, options, {contents});
+    }
     let Asset = this.findParser(filename);
     options.parser = this;
     return new Asset(filename, pkg, options);

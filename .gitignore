@@ -3,6 +3,7 @@ node_modules/
 package-lock.json
 test/dist
 test/input
+test/temp
 coverage
 .nyc_output
 .cache

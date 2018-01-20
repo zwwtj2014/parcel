@@ -1,3 +1,4 @@
+const dbg = require('debug')('parcel:Bundler');
 const fs = require('./utils/fs');
 const Resolver = require('./Resolver');
 const Parser = require('./Parser');
@@ -12,6 +13,7 @@ const {EventEmitter} = require('events');
 const Logger = require('./Logger');
 const PackagerRegistry = require('./packagers');
 const localRequire = require('./utils/localRequire');
+const localResolve = require('./utils/localRequire').localResolve;
 const config = require('./utils/config');
 const emoji = require('./utils/emoji');
 const loadEnv = require('./utils/env');
@@ -147,6 +149,11 @@ class Bundler extends EventEmitter {
 
     let isInitialBundle = !this.mainAsset;
     let startTime = Date.now();
+
+    if (this.buildQueue.empty && !isInitialBundle) {
+      return null;
+    }
+
     this.pending = true;
     this.errored = false;
 
@@ -196,6 +203,9 @@ class Bundler extends EventEmitter {
       this.emit('bundled', bundle);
       return bundle;
     } catch (err) {
+      if (process.env.NODE_ENV === 'test') {
+        throw err;
+      }
       this.errored = true;
       this.logger.error(err);
       if (this.hmr) {
@@ -268,7 +278,71 @@ class Bundler extends EventEmitter {
   }
 
   async resolveAsset(name, parent) {
-    let {path, pkg} = await this.resolver.resolve(name, parent);
+    // if (!name.startsWith('/') && !name.startsWith('.') && !name.startsWith('_') && !Path.parse(name).ext) {
+    //   dbg('resolveAsset', {name, parent});
+    //   let res = await localResolve(name, parent);
+    //   dbg('resolveAsset:res', {name, parent, res});
+    // }
+    let isFile = (file, cb) => {
+      if (file === name || this.loadedAssets.has(file)) {
+        cb(null, true);
+      } else {
+        // localRequire(name, parent ? Path.parse(parent).dir : parent).then(
+        // try {
+        //   const ext = Path.parse(file).ext;
+        //   if (ext !== 'json') {
+        //     dbg('localResolve', {file, name, parent});
+        //   }
+        //   localResolve(file, parent).then(
+        //     res => {
+        //       if (ext != 'json') {
+        //         dbg('localResolve:res', {file, name, parent, res});
+        //       }
+        //       // return cb(null, !(file instanceof Error))
+        //         fs.stat(res, function (err, stat) {
+        //           // dbg('localResolve:stat', {file, name, err, stat});
+        //           if (err && err.code === 'ENOENT') {
+        //             cb(null, false);
+        //           }
+        //           else if (err) {
+        //             // cb(err);
+        //             cb(null, false);
+        //           }
+        //           else {
+        //             cb(null, stat.isFile() || stat.isFIFO());
+        //           }
+        //         });
+        //     },
+        //     err => {
+        //       // dbg('localResolve:err', {file, name, err});
+        //       // console.log('TKTK');
+        //       // console.error(err);
+        //       return cb(null, false)
+        //     }
+        //   )
+        // } catch (e) {
+        //   dbg('localResolve:error', {name, parent});
+        //   console.log('TKTK err');
+        //   console.error(e);
+        //   return cb(null, false);
+        // }
+        fs.stat(file, function (err, stat) {
+          // dbg('localResolve:stat', {file, name, err, stat});
+          if (err && err.code === 'ENOENT') {
+            cb(null, false);
+          }
+          else if (err) {
+            cb(err);
+            // cb(null, false);
+          }
+          else {
+            cb(null, stat.isFile() || stat.isFIFO());
+          }
+        });
+      }
+    };
+
+    let {path, pkg} = await this.resolver.resolve(name, parent, {isFile});
     if (this.loadedAssets.has(path)) {
       return this.loadedAssets.get(path);
     }
@@ -361,7 +435,7 @@ class Bundler extends EventEmitter {
     // First try the cache, otherwise load and compile in the background
     let processed = this.cache && (await this.cache.read(asset.name));
     if (!processed || asset.shouldInvalidate(processed.cacheData)) {
-      processed = await this.farm.run(asset.name, asset.package, this.options);
+      processed = await this.farm.run(asset.name, asset.contents, asset.package, this.options);
       if (this.cache) {
         this.cache.write(asset.name, processed);
       }
@@ -378,19 +452,52 @@ class Bundler extends EventEmitter {
         dependencies = dependencies.concat(implicitDeps);
       }
     }
+    let seen = new Set();
+    for (let dep of dependencies) {
+      if (dep.install && !seen.has(dep.name+':'+asset.name)) {
+        seen = seen.add(dep.name+':'+asset.name);
+        let res = await localResolve(dep.name, asset.name);
+        res = res;
+      }
+    }
+    // await Promise.all(
+    //   dependencies.map(async dep => {
+    //     if (dep.install) {
+    //       let res = await localResolve(dep.name, asset.name);
+    //       res = res;
+    //       // let assetDep = await this.resolveDep(asset, dep);
+    //       // return assetDep;
+    //     }
+    //   }));
 
     // Resolve and load asset dependencies
     let assetDeps = await Promise.all(
       dependencies.map(async dep => {
-        if (dep.includedInParent) {
-          // This dependency is already included in the parent's generated output,
-          // so no need to load it. We map the name back to the parent asset so
-          // that changing it triggers a recompile of the parent.
-          this.watch(dep.name, asset);
-        } else {
-          let assetDep = await this.resolveDep(asset, dep);
+        if (dep.contents != null) {
+          let assetDep = this.loadedAssets.get(dep.name) || this.parser.getAsset(dep.name, null, this.options, dep.contents);
+          this.loadedAssets.set(dep.name, assetDep);
+          this.watch(dep.name, assetDep);
+          if (assetDep.contents != dep.contents) {
+            assetDep.options.contents = dep.contents;
+            assetDep.invalidate();
+            if (this.cache) {
+              this.cache.invalidate(assetDep.name);
+            }
+            await this.onChange(assetDep.name);
+          }
           await this.loadAsset(assetDep);
           return assetDep;
+        } else {
+          if (dep.includedInParent) {
+            // This dependency is already included in the parent's generated output,
+            // so no need to load it. We map the name back to the parent asset so
+            // that changing it triggers a recompile of the parent.
+            this.watch(dep.name, asset);
+          } else if (!dep.install) {
+            let assetDep = await this.resolveDep(asset, dep);
+            await this.loadAsset(assetDep);
+            return assetDep;
+          }
         }
       })
     );
@@ -521,6 +628,7 @@ class Bundler extends EventEmitter {
   }
 
   async onChange(path) {
+    dbg('onChange', path);
     let assets = this.watchedAssets.get(path);
     if (!assets || !assets.size) {
       return;
@@ -531,6 +639,7 @@ class Bundler extends EventEmitter {
 
     // Add the asset to the rebuild queue, and reset the timeout.
     for (let asset of assets) {
+      dbg('onChange:asset', asset.name);
       this.buildQueue.add(asset, true);
     }
 

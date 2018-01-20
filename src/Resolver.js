@@ -11,17 +11,18 @@ class Resolver {
     this.cache = new Map();
   }
 
-  async resolve(filename, parent) {
-    var resolved = await this.resolveInternal(filename, parent, resolveAsync);
+  async resolve(filename, parent, options = {}) {
+    var resolved = await this.resolveInternal(filename, parent, options, resolveAsync);
     return this.saveCache(filename, parent, resolved);
   }
 
-  resolveSync(filename, parent) {
-    var resolved = this.resolveInternal(filename, parent, resolve.sync);
+  resolveSync(filename, parent, options = {}) {
+    var resolved = this.resolveInternal(filename, parent, options, resolve.sync);
     return this.saveCache(filename, parent, resolved);
   }
 
-  resolveInternal(filename, parent, resolver) {
+  resolveInternal(filename, parent, options, resolver) {
+    filename = filename.split('@')[0];
     let key = this.getCacheKey(filename, parent);
     if (this.cache.has(key)) {
       return this.cache.get(key);
@@ -38,28 +39,29 @@ class Resolver {
       extensions = [parentExt, ...extensions.filter(ext => ext !== parentExt)];
     }
 
-    return resolver(filename, {
-      filename: parent,
-      paths: this.options.paths,
-      modules: builtins,
-      extensions: extensions,
-      packageFilter(pkg, pkgfile) {
-        // Expose the path to the package.json file
-        pkg.pkgfile = pkgfile;
+    return resolver(filename, Object.assign({
+        filename: parent,
+        paths: this.options.paths,
+        modules: builtins,
+        extensions: extensions,
+        packageFilter(pkg, pkgfile) {
+          // Expose the path to the package.json file
+          pkg.pkgfile = pkgfile;
 
-        // libraries like d3.js specifies node.js specific files in the "main" which breaks the build
-        // we use the "module" or "jsnext:main" field to get the full dependency tree if available
-        const main = [pkg.module, pkg['jsnext:main']].find(
-          entry => typeof entry === 'string'
-        );
+          // libraries like d3.js specifies node.js specific files in the "main" which breaks the build
+          // we use the "module" or "jsnext:main" field to get the full dependency tree if available
+          const main = [pkg.module, pkg['jsnext:main']].find(
+            entry => typeof entry === 'string'
+          );
 
-        if (main) {
-          pkg.main = main;
+          if (main) {
+            pkg.main = main;
+          }
+
+          return pkg;
         }
-
-        return pkg;
-      }
-    });
+      },
+      options));
   }
 
   getCacheKey(filename, parent) {

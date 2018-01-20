@@ -23,6 +23,10 @@ class PromiseQueue {
     this.processing.add(job);
   }
 
+  get empty() {
+    return this.queue.length <= 0;
+  }
+
   run() {
     if (this.runPromise) {
       return this.runPromise;
