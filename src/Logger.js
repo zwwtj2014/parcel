@@ -59,7 +59,6 @@ class Logger {
   }
 
   clear() {
-    return;
     if (!this.color) {
       return;
     }
@@ -75,7 +74,6 @@ class Logger {
   }
 
   writeLine(line, msg) {
-    return this.log(msg);
     if (!this.color) {
       return this.log(msg);
     }

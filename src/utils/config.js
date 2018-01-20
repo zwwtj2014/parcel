@@ -1,7 +1,6 @@
 const fs = require('./fs');
 const path = require('path');
 const json5 = require('json5');
-const glob = require('glob');
 
 const existsCache = new Map();
 
@@ -70,14 +69,6 @@ async function load(filepath, filenames, root = path.parse(filepath).root) {
   }
 
   return null;
-}
-
-async function getPlugins(filepath, filenames, root = path.parse(filepath).root) {
-  let configFile = await resolve(filepath, filenames, root);
-  if (configFile) {
-    return glob.sync(path.join(path.parse(configFile).dir, 'node_modules', 'parcel-plugin-*'))
-  }
-  return [];
 }
 
 exports.resolve = resolve;
