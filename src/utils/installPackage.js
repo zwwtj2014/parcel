@@ -4,10 +4,6 @@ const config = require('./config');
 const path = require('path');
 
 module.exports = async function(dir, name) {
-  // name = name.split('/')[0]
-  // if (name.startsWith('vue-component-compiler')) {
-  //   name = 'vue-component-compiler@https://github.com/shawwn/vue-component-compiler#parcel-vue-component-compiler'
-  // }
   let location = await config.resolve(dir, ['yarn.lock', 'package.json']);
 
   return new Promise((resolve, reject) => {
@@ -34,4 +30,23 @@ module.exports = async function(dir, name) {
       return resolve();
     });
   });
+};
+
+module.exports.sync = function(dir, name) {
+  let location = config.resolveSync(dir, ['yarn.lock', 'package.json']);
+
+  let install;
+  let options = {
+    cwd: location ? path.dirname(location) : dir,
+    stdio: 'inherit'
+  };
+
+  if (location && path.basename(location) === 'yarn.lock') {
+    dbg('yarn', ['add', name, '--dev'], options);
+    install = spawn.sync('yarn', ['add', name, '--dev'], options);
+  } else {
+    dbg('npm', ['install', name, '--save-dev'], options);
+    install = spawn.sync('npm', ['install', name, '--save-dev'], options);
+  }
+  return install;
 };

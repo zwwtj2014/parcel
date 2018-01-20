@@ -3,6 +3,12 @@ const localRequire = require('../utils/localRequire');
 const promisify = require('../utils/promisify');
 
 class LESSAsset extends CSSAsset {
+  async install() {
+    return [...await super.install(),
+      {name: 'less', dev: true},
+    ];
+  }
+
   async parse(code) {
     // less should be installed locally in the module that's being required
     let less = await localRequire('less', this.name);

@@ -39,7 +39,6 @@ require = (function (modules, cache, entry) {
 
       var module = cache[name] = new newRequire.Module;
       if (module.hot && !module.hot.hasOwnProperty("data")) {
-        console.log('module.hot.data', hmrBundle);
         module.hot.data = hmrBundle;
       }
 

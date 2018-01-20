@@ -2,6 +2,13 @@ const JSAsset = require('./JSAsset');
 const localRequire = require('../utils/localRequire');
 
 class CoffeeScriptAsset extends JSAsset {
+
+  async install() {
+    return [...await super.install(),
+      {name: 'coffeescript', dev: true}
+    ];
+  }
+
   async parse(code) {
     // require coffeescript, installed locally in the app
     let coffee = await localRequire('coffeescript', this.name);

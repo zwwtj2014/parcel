@@ -14,6 +14,12 @@ class CSSAsset extends Asset {
     this.type = 'css';
   }
 
+  async install() {
+    return [...await super.install(),
+      {name: 'postcss-modules', dev: true}
+    ];
+  }
+
   mightHaveDependencies() {
     return (
       !/\.css$/.test(this.name) ||

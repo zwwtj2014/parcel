@@ -134,6 +134,10 @@ class Asset {
     };
   }
 
+  async install() {
+    return [];
+  }
+
   async process() {
     if (!this.generated) {
       await this.loadIfNeeded();

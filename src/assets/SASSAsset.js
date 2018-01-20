@@ -4,6 +4,12 @@ const promisify = require('../utils/promisify');
 const path = require('path');
 
 class SASSAsset extends CSSAsset {
+  async install() {
+    return [...await super.install(),
+      {name: 'node-sass', dev: true},
+    ];
+  }
+
   async parse(code) {
     // node-sass should be installed locally in the module that's being required
     let sass = await localRequire('node-sass', this.name);

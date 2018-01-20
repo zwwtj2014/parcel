@@ -27,6 +27,28 @@ async function resolve(filepath, filenames, root = path.parse(filepath).root) {
   return resolve(filepath, filenames, root);
 }
 
+function resolveSync(filepath, filenames, root = path.parse(filepath).root) {
+  filepath = path.dirname(filepath);
+
+  // Don't traverse above the module root
+  if (filepath === root || path.basename(filepath) === 'node_modules') {
+    return null;
+  }
+
+  for (const filename of filenames) {
+    let file = path.join(filepath, filename);
+    let exists = existsCache.has(file)
+      ? existsCache.get(file)
+      : fs.existsSync(file);
+    if (exists) {
+      existsCache.set(file, true);
+      return file;
+    }
+  }
+
+  return resolveSync(filepath, filenames, root);
+}
+
 async function load(filepath, filenames, root = path.parse(filepath).root) {
   let configFile = await resolve(filepath, filenames, root);
   if (configFile) {
@@ -59,4 +81,5 @@ async function getPlugins(filepath, filenames, root = path.parse(filepath).root)
 }
 
 exports.resolve = resolve;
+exports.resolveSync = resolveSync;
 exports.load = load;

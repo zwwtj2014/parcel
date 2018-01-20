@@ -203,9 +203,6 @@ class Bundler extends EventEmitter {
       this.emit('bundled', bundle);
       return bundle;
     } catch (err) {
-      if (process.env.NODE_ENV === 'test') {
-        throw err;
-      }
       this.errored = true;
       this.logger.error(err);
       if (this.hmr) {
@@ -431,6 +428,15 @@ class Bundler extends EventEmitter {
 
     // Mark the asset processed so we don't load it twice
     asset.processed = true;
+    let installDeps = await asset.install();
+
+    this.installed = this.installed || new Set();
+    for (let dep of installDeps) {
+      if (!this.installed.has(dep.name)) {
+        this.installed.add(dep.name);
+        localResolve(dep.name, asset.name);
+      }
+    }
 
     // First try the cache, otherwise load and compile in the background
     let processed = this.cache && (await this.cache.read(asset.name));
@@ -452,23 +458,6 @@ class Bundler extends EventEmitter {
         dependencies = dependencies.concat(implicitDeps);
       }
     }
-    let seen = new Set();
-    for (let dep of dependencies) {
-      if (dep.install && !seen.has(dep.name+':'+asset.name)) {
-        seen = seen.add(dep.name+':'+asset.name);
-        let res = await localResolve(dep.name, asset.name);
-        res = res;
-      }
-    }
-    // await Promise.all(
-    //   dependencies.map(async dep => {
-    //     if (dep.install) {
-    //       let res = await localResolve(dep.name, asset.name);
-    //       res = res;
-    //       // let assetDep = await this.resolveDep(asset, dep);
-    //       // return assetDep;
-    //     }
-    //   }));
 
     // Resolve and load asset dependencies
     let assetDeps = await Promise.all(

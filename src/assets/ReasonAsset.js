@@ -3,6 +3,12 @@ const fs = require('../utils/fs');
 const localRequire = require('../utils/localRequire');
 
 class ReasonAsset extends JSAsset {
+  async install() {
+    return [...await super.install(),
+      {name: 'bsb-js', dev: true},
+    ];
+  }
+
   async parse() {
     const bsb = await localRequire('bsb-js', this.name);
 

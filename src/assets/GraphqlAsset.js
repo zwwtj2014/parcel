@@ -7,6 +7,12 @@ class GraphqlAsset extends Asset {
     this.type = 'js';
   }
 
+  async install() {
+    return [...await super.install(),
+      {name: 'graphql-tag', dev: true},
+      ];
+  }
+
   async parse(code) {
     let gql = await localRequire('graphql-tag', this.name);
     return gql(code);

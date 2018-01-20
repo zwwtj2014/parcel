@@ -5,6 +5,11 @@ const Resolver = require('../Resolver');
 const URL_RE = /^(?:url\s*\(\s*)?['"]?(?:[#/]|(?:https?:)?\/\/)/i;
 
 class StylusAsset extends CSSAsset {
+  async install() {
+    return [...await super.install(),
+      {name: 'stylus', dev: true},
+    ];
+  }
   async parse(code) {
     // stylus should be installed locally in the module that's being required
     let stylus = await localRequire('stylus', this.name);

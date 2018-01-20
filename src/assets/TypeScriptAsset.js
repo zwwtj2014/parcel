@@ -2,6 +2,12 @@ const JSAsset = require('./JSAsset');
 const localRequire = require('../utils/localRequire');
 
 class TypeScriptAsset extends JSAsset {
+  async install() {
+    return [...await super.install(),
+      {name: 'typescript', dev: true},
+    ];
+  }
+
   async parse(code) {
     // require typescript, installed locally in the app
     let typescript = await localRequire('typescript', this.name);
