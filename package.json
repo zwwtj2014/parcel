@@ -9,6 +9,7 @@
     "url": "https://github.com/parcel-bundler/parcel.git"
   },
   "dependencies": {
+    "babel-cli": "^6.26.0",
     "babel-core": "^6.25.0",
     "babel-generator": "^6.25.0",
     "babel-plugin-transform-es2015-modules-commonjs": "^6.26.0",
@@ -50,7 +51,6 @@
     "ws": "^3.3.3"
   },
   "devDependencies": {
-    "babel-cli": "^6.26.0",
     "bsb-js": "^1.0.1",
     "chai": "^4.1.2",
     "codecov": "^3.0.0",
