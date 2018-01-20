@@ -88,7 +88,7 @@
     "test-ci": "yarn test-coverage && yarn report-coverage",
     "format": "prettier --write './{src,bin,test}/**/*.{js,json,md}'",
     "build":
-      "yarn minify && babel src -d lib --presets env --plugins transform-runtime --ignore builtins && ncp src/builtins lib/builtins",
+      "yarn minify && babel --no-babelrc --presets env --plugins transform-runtime --ignore builtins src -d lib && ncp src/builtins lib/builtins",
     "prepare": "yarn build",
     "minify":
       "uglifyjs -c -m -o src/builtins/prelude.min.js src/builtins/prelude.js",
