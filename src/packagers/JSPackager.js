@@ -2,14 +2,24 @@ const fs = require('fs');
 const path = require('path');
 const Packager = require('./Packager');
 
-const prelude = {
-  source: fs
-    .readFileSync(path.join(__dirname, '../builtins/prelude.js'), 'utf8')
-    .trim(),
-  minified: fs
-    .readFileSync(path.join(__dirname, '../builtins/prelude.min.js'), 'utf8')
-    .trim()
-    .replace(/;$/, '')
+let prelude = {};
+
+prelude.source = function() {
+  return (
+    prelude._source ||
+    (prelude._source = fs
+      .readFileSync(path.join(__dirname, '../builtins/prelude.js'), 'utf8')
+      .trim())
+  );
+};
+
+prelude.minified = function() {
+  return (
+    prelude._minified ||
+    (prelude._minified = fs
+      .readFileSync(path.join(__dirname, '../builtins/prelude.js'), 'utf8')
+      .trim())
+  );
 };
 
 class JSPackager extends Packager {
@@ -19,7 +29,9 @@ class JSPackager extends Packager {
     this.bundleLoaders = new Set();
     this.externalModules = new Set();
 
-    let preludeCode = this.options.minify ? prelude.minified : prelude.source;
+    let preludeCode = this.options.minify
+      ? prelude.minified()
+      : prelude.source();
     await this.dest.write(preludeCode + '({');
   }
 
