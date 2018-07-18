@@ -32,13 +32,17 @@ class Bundler extends EventEmitter {
     this.entryFiles = this.normalizeEntries(entryFiles);
     this.options = this.normalizeOptions(options);
 
+    // 解析node_modules的算法
     this.resolver = new Resolver(this.options);
+    // 实例化资源解析器
     this.parser = new Parser(this.options);
+    // 实例化打包器
     this.packagers = new PackagerRegistry(this.options);
     this.cache = this.options.cache ? new FSCache(this.options) : null;
     this.delegate = options.delegate || {};
     this.bundleLoaders = {};
 
+    // 注册bundle loader
     this.addBundleLoader('wasm', {
       browser: require.resolve('./builtins/loaders/browser/wasm-loader'),
       node: require.resolve('./builtins/loaders/node/wasm-loader')
@@ -71,6 +75,10 @@ class Bundler extends EventEmitter {
     logger.setOptions(this.options);
   }
 
+  /**
+   * 收集入口
+   * @param {*} entryFiles
+   */
   normalizeEntries(entryFiles) {
     // Support passing a single file
     if (entryFiles && !Array.isArray(entryFiles)) {
@@ -88,6 +96,10 @@ class Bundler extends EventEmitter {
       .map(f => Path.resolve(f));
   }
 
+  /**
+   * 解析配置项, 设置默认值
+   * @param {*} options
+   */
   normalizeOptions(options) {
     const isProduction =
       options.production || process.env.NODE_ENV === 'production';
@@ -166,6 +178,11 @@ class Bundler extends EventEmitter {
     this.packagers.add(type, packager);
   }
 
+  /**
+   * 注册bundle 的loader, 该方法主要做检查, ok了写入bundleLoaders
+   * @param {*} type
+   * @param {*} paths
+   */
   addBundleLoader(type, paths) {
     if (typeof paths === 'string') {
       paths = {node: paths, browser: paths};
@@ -190,6 +207,9 @@ class Bundler extends EventEmitter {
     this.bundleLoaders[type] = paths;
   }
 
+  /**
+   * 解析package.json中以`parcel-plugin`开头的依赖插件自动加载
+   */
   async loadPlugins() {
     let relative = Path.join(this.options.rootDir, 'index');
     let pkg = await config.load(relative, ['package.json']);
@@ -211,6 +231,9 @@ class Bundler extends EventEmitter {
     }
   }
 
+  /**
+   * bundle main method
+   */
   async bundle() {
     // If another bundle is already pending, wait for that one to finish and retry.
     if (this.pending) {
@@ -238,10 +261,12 @@ class Bundler extends EventEmitter {
 
       // If this is the initial bundle, ensure the output directory exists, and resolve the main asset.
       if (isInitialBundle) {
+        // 创建输出目录
         await fs.mkdirp(this.options.outDir);
 
         this.entryAssets = new Set();
         for (let entry of this.entryFiles) {
+          // 根据入口得到对应的Asset
           let asset = await this.resolveAsset(entry);
           this.buildQueue.add(asset);
           this.entryAssets.add(asset);
@@ -339,6 +364,7 @@ class Bundler extends EventEmitter {
       return;
     }
 
+    // 解析package.json, 加载插件
     await this.loadPlugins();
 
     if (!this.options.env) {
@@ -389,6 +415,11 @@ class Bundler extends EventEmitter {
     return asset;
   }
 
+  /**
+   * 根据要parse的文件解析得到对应的XXXAsset
+   * @param {*} name
+   * @param {*} parent
+   */
   async resolveAsset(name, parent) {
     let {path} = await this.resolver.resolve(name, parent);
     return this.getLoadedAsset(path);

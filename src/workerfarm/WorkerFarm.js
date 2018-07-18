@@ -83,6 +83,9 @@ class WorkerFarm extends EventEmitter {
     }
   }
 
+  /**
+   * 启动一个worker
+   */
   startChild() {
     let worker = new Worker(this.options);
 

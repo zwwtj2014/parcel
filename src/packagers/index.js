@@ -5,6 +5,9 @@ const HTMLPackager = require('./HTMLPackager');
 const SourceMapPackager = require('./SourceMapPackager');
 const RawPackager = require('./RawPackager');
 
+/**
+ * 注册bundle的类型和对应的打包器
+ */
 class PackagerRegistry {
   constructor(options) {
     this.packagers = new Map();

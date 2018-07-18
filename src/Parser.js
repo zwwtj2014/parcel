@@ -3,6 +3,9 @@ const RawAsset = require('./assets/RawAsset');
 const GlobAsset = require('./assets/GlobAsset');
 const isGlob = require('is-glob');
 
+/**
+ * 注册资源的扩展和对应的解析器
+ */
 class Parser {
   constructor(options = {}) {
     this.extensions = {};
